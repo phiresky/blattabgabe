@@ -1,47 +1,69 @@
+<!doctype html>
+<html>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="bs/css/bootstrap.min.css">
 <style>
 .past {
-	color:gray;
+	color:gray !important;
 }
 </style>
-<div id=outp>js is disabled</div>
+
+
+<div class="container">
+<h1>KIT Inf SS2014 Übungsblätter</h1>
+<h2>Priorities</h2>
+<div id=priorities></div>
+<h2>Overview</h2>
+<div id=overview>js is disabled</div>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
 <script>
-var semwoch=14;
+moment.lang(navigator.language || navigator.userLanguage);
+var semende=moment("2014-08-01");
+var datefmt="dd, DD.MM. HH:mm";
+var maxwarndiff=5*24*3600*1000;
 function fmt(integer,len) {
 	if(len===1) return ""+integer;
 	if(integer<10) return "0"+integer;
 	else return ""+integer;
 }
+function getcolor(until) {
+	var red=1-until.diff(moment())/maxwarndiff;
+	if(red<0) red=0;
+	return "rgb("+(red*255).toFixed(0)+",0,0)";
+}
 var uebs={
-	"RO":{begin:moment("2014-04-28 13:15"),count:semwoch,interval:7,url:"http://algo2.iti.kit.edu/documents/algo1-2014/blatt_{2}.pdf"},
-	"Algo":{begin:moment("2014-04-25 12:45"),count:semwoch,interval:7,url:"http://ti.itec.uka.de/TI-2/Uebungen/blatt{2}.pdf"},
-	"SWT":{begin:moment("2014-04-29 12:00"),count:semwoch/2,interval:14,url:"http://svn.ipd.kit.edu/lehre/vorlesung/SWT1/SS14/stud/Uebung/{1}/"},
-	"HM":{begin:moment("2014-04-23 13:30"),count:semwoch,interval:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"}
+	"RO":{begin:moment("2014-04-28 13:15"),interval:7,url:"http://algo2.iti.kit.edu/documents/algo1-2014/blatt_{2}.pdf"},
+	"Algo":{begin:moment("2014-04-25 12:45"),interval:7,url:"http://algo2.iti.kit.edu/documents/algo1-2014/blatt_{2}.pdf"},
+	"SWT":{begin:moment("2014-04-29 12:00"),interval:14,url:"http://svn.ipd.kit.edu/lehre/vorlesung/SWT1/SS14/stud/Uebung/{1}/"},
+	"HM":{begin:moment("2014-04-23 13:30"),interval:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"},
+	"LA":{begin:moment("2014-05-08 12:00"),interval:[14,7,7,7,7,7,7],url:"https://ilias.studium.kit.edu/goto_produktiv_fold_309670.html?dammitilias={2}"}
 }
 var todo=[];
 var overview="";
 for(var ueb in uebs) {
 	var u = uebs[ueb];
-	var str="<p><h2>"+ueb+"</h2><ul>";
+	var str="<p><h3>"+ueb+"</h3><ul>";
 	var date=u.begin;
-	for(var i = 0; i < u.count; i++) {
+	for(var i = 0; date.isBefore(semende)&&i<100; i++) {
 		var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
 		var num=fmt(i+1,padding);
 		var url=u.url.replace(/\{\d\}/,num);
-		var past=date.isBefore(moment())?"past":"";
+		var past=date.isBefore(moment());
 		var until=date.fromNow();
-		var li="<li class='"+past+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format("YYYY-MM-DD (dd) HH:mm")+" "+until.toString();
+		var li="<li style='color:"+getcolor(date)+"' class='"+(past?"past":"")+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format(datefmt)+" ("+until.toString()+")";
 		str+=li;
-		date.add('days', u.interval);
-		if(past==="") {
-			todo.push({li:li,date:moment(date)});
+		if(past===false) {
+			todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
 			break;
 		}
+		date.add('days', (typeof u.interval==="number")?u.interval:u.interval[i<u.interval.length?i:u.interval.length-1]);
 	}
 	str+="</ul></p>";
 	overview+=str;
 }
-$("#overview").html(overview);
 todo.sort(function(a,b){return a.date.diff(b.date)});
+$("#overview").html(overview);
+$("#priorities").html("<ol>"+$.map(todo,function(e){return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"}).join("\n")+"</ol>");
 </script>
+</div>
