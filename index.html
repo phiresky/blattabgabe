@@ -6,14 +6,26 @@
 .past {
 	color:gray !important;
 }
+#panic {
+	color:darkred;
+}
+hr {
+	margin-top:50px;
+}
+footer {
+	color:gray;
+}
 </style>
 
 
 <div class="container">
 <h1>KIT Inf SS2014 Übungsblätter</h1>
+<h2>Panic</h2>
+<div id=panic></div>
 <h2>Priorities</h2>
 <div id=priorities></div>
-<h2>Overview</h2>
+<hr>
+<h2 class=togglable>Overview</h2>
 <div id=overview>js is disabled</div>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
@@ -32,8 +44,18 @@ function getcolor(until) {
 	if(red<0) red=0;
 	return "rgb("+(red*255).toFixed(0)+",0,0)";
 }
+function panicstring(until,ueb) {
+	var str="Nur noch ";
+	var d=until.days();
+	var h=until.hours();
+	if(d>0) str+=d+" Tag"+((d>1)?"e, ":", ");
+	if(h>0) str+=h+" Stunde"+((d>1)?"n, ":", ");
+	str+=until.minutes()+" Minuten und "+until.seconds()+" Sekunden bis zur "+ueb+"-Abgabe!";
+	return str;
+
+}
 var uebs={
-	"RO":{begin:moment("2014-04-28 13:15"),interval:7,url:"http://algo2.iti.kit.edu/documents/algo1-2014/blatt_{2}.pdf"},
+	"RO":{begin:moment("2014-04-28 13:15"),interval:7,url:"http://ti.ira.uka.de/TI-2/Uebungen/blatt{2}.pdf"},
 	"Algo":{begin:moment("2014-04-25 12:45"),interval:7,url:"http://algo2.iti.kit.edu/documents/algo1-2014/blatt_{2}.pdf"},
 	"SWT":{begin:moment("2014-04-29 12:00"),interval:14,url:"http://svn.ipd.kit.edu/lehre/vorlesung/SWT1/SS14/stud/Uebung/{1}/"},
 	"HM":{begin:moment("2014-04-23 13:30"),interval:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"},
@@ -65,5 +87,20 @@ for(var ueb in uebs) {
 todo.sort(function(a,b){return a.date.diff(b.date)});
 $("#overview").html(overview);
 $("#priorities").html("<ol>"+$.map(todo,function(e){return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"}).join("\n")+"</ol>");
+
+function panicfunct() {
+	var untilnext=moment.duration(todo[0].date.diff(moment()));
+	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
+}
+panicfunct();
+setInterval(panicfunct,1000);
+/*$(".togglable").click(function() {
+	var o=$(this);
+	if(o.text()[0]==="-") o.text("+ "+o.text().substr(1));
+
+	else o.text("- "+o.text().substr(1));
+	o.next().slideToggle();
+});*/
 </script>
+<footer>Dates are calculated, and may not be accurate if Profs make exceptions.</footer>
 </div>
