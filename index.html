@@ -36,6 +36,10 @@ moment.lang(navigator.language || navigator.userLanguage);
 var semende=moment("2014-07-18");
 var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
+function queryParam(name) {
+	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+	return match && decodeURIComponent(match[1].replace(/\+/g, ' ')) || "";
+}
 function fmt(integer,len) {
 	if(len===1) return ""+integer;
 	if(integer<10) return "0"+integer;
@@ -62,35 +66,42 @@ var uebs={
 	"SWT":{begin:"2014-04-29 12:00",every:14,url:"http://svn.ipd.kit.edu/lehre/vorlesung/SWT1/SS14/stud/Uebung/{1}/"},
 	"HM":{begin:"2014-04-23 13:30",every:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"},
 	"LA":{begin:"2014-05-08 12:00",every:[14,7,7,7,7,7,7],url:"https://ilias.studium.kit.edu/goto_produktiv_fold_309670.html?dammitilias={2}"}
-}
-var todo=[];
-var overview="";
-for(var ueb in uebs) {
-	var u = uebs[ueb];
-	var str="<p><h3>"+ueb+"</h3><ul>";
-	var date=moment(u.begin);
-	for(var i = 0; date.isBefore(semende)&&i<100; i++) {
-		var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
-		var num=fmt(i+1,padding);
-		var url=u.url.replace(/\{\d\}/,num);
-		var past=date.isBefore(moment());
-		var until=date.fromNow();
-		var li="<li style='color:"+getcolor(date)+"' class='"+(past?"past":"")+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format(datefmt)+" ("+until.toString()+")";
-		str+=li;
-		if(past===false) {
-			todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
-			break;
+};
+queryParam("idgaf").split(",").forEach(function(ueb) {
+	delete uebs[ueb];
+});
+var todo;
+var overview;
+function calc() {
+	todo=[];overview="";
+	for(var ueb in uebs) {
+		var u = uebs[ueb];
+		var str="<p><h3>"+ueb+"</h3><ul>";
+		var date=moment(u.begin);
+		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
+			var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
+			var num=fmt(i+1,padding);
+			var url=u.url.replace(/\{\d\}/,num);
+			var past=date.isBefore(moment());
+			var until=date.fromNow();
+			var li="<li style='color:"+getcolor(date)+"' class='"+(past?"past":"")+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format(datefmt)+" ("+until.toString()+")";
+			str+=li;
+			if(past===false) {
+				todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
+				break;
+			}
+			date.add('days', (typeof u.every==="number")?u.every:u.every[i<u.every.length?i:u.every.length-1]);
 		}
-		date.add('days', (typeof u.every==="number")?u.every:u.every[i<u.every.length?i:u.every.length-1]);
+		str+="</ul></p>";
+		overview+=str;
 	}
-	str+="</ul></p>";
-	overview+=str;
+	todo.sort(function(a,b){return a.date.diff(b.date)});
+	$("#overview").html(overview);
+	$("#priorities").html("<ol>"+$.map(todo,function(e){return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"}).join("\n")+"</ol>");
 }
-todo.sort(function(a,b){return a.date.diff(b.date)});
-$("#overview").html(overview);
-$("#priorities").html("<ol>"+$.map(todo,function(e){return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"}).join("\n")+"</ol>");
-
+calc();
 function panicfunct() {
+	if(todo.length==0) return;
 	var untilnext=moment.duration(todo[0].date.diff(moment()));
 	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
 }
