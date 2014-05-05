@@ -59,9 +59,9 @@ function panicstring(until,ueb) {
 	var str="Nur noch ";
 	var d=until.days();
 	var h=until.hours();
-	if(d>0) str+=d+" Tag"+((d>1)?"e, ":", ");
-	if(h>0) str+=h+" Stunde"+((d>1)?"n, ":", ");
-	str+=until.minutes()+" Minuten und "+until.seconds()+" Sekunden bis zur "+ueb+"-Abgabe!";
+	if(d>0) str+=d+" Tag"+((d!=1)?"e, ":", ");
+	if(h>0) str+=h+" Stunde"+((h!=1)?"n ":" ");
+	str+="und "+until.minutes()+" Minuten bis zur "+ueb+"-Abgabe!";
 	return str;
 
 }
