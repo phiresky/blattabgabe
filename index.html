@@ -17,6 +17,11 @@ hr {
 footer {
 	color:gray;
 }
+.tiny {
+	font-size:50%;
+	color:lightgray;
+	cursor: pointer;
+}
 </style>
 
 
@@ -70,13 +75,21 @@ var uebs={
 queryParam("idgaf").split(",").forEach(function(ueb) {
 	delete uebs[ueb];
 });
+function addIgnore(vorles) {
+	if(queryParam("idgaf").split(",").indexOf(vorles)>=0) return;
+	var s=location.search;
+	var inx=s.indexOf("idgaf=");
+	if(inx>=0) s=s.slice(0,inx+6)+vorles+","+s.slice(inx+6); 
+	else if(s.length<=1) s="?idgaf="+vorles;
+	location.search=s;
+}
 var todo;
 var overview;
 function calc() {
 	todo=[];overview="";
 	for(var ueb in uebs) {
 		var u = uebs[ueb];
-		var str="<p><h3>"+ueb+"</h3><ul>";
+		var str="<p><h3>"+ueb+" <span class=tiny onclick='addIgnore(\""+ueb+"\")'>(ignore)</span></h3><ul>";
 		var date=moment(u.begin);
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
 			var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
