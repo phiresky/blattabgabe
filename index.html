@@ -19,7 +19,7 @@ footer {
 }
 .tiny {
 	font-size:12px;
-	color:lightblue;
+	color:#80cfe9;
 	cursor: pointer;
 }
 </style>
@@ -91,6 +91,10 @@ if(dones!==null) dones.split(",").forEach(function(blatt) {
 
 var viewall=queryParam("view")==="all";
 function addParam(param, insstr) {
+	if(insstr==-1) {
+		location.search=location.search.replace(RegExp('[?&]'+param+'=[^&]*'),"");
+		return;
+	}
 	if(queryParam(param)!==null&&queryParam(param).split(",").indexOf(insstr)>=0) return;
 	var s=location.search;
 	var inx=s.indexOf(param);
@@ -135,6 +139,8 @@ function calc() {
 	}).join("\n")+"</ol>");
 }
 calc();
+
+$("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
 
 
 function panicfunct() {
