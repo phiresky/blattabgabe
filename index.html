@@ -18,7 +18,7 @@ footer {
 	color:gray;
 }
 .tiny {
-	font-size:50%;
+	font-size:12px;
 	color:lightblue;
 	cursor: pointer;
 }
@@ -72,18 +72,35 @@ var uebs={
 	"HM":{begin:"2014-04-23 13:30",every:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"},
 	"LA":{begin:"2014-05-08 12:00",every:[14,7,7,7,7,7,7],url:"https://ilias.studium.kit.edu/goto_produktiv_fold_309670.html?dammitilias={2}"}
 };
+
+//ignore some uebs
 var ignores=queryParam("idgaf");
 if(ignores!==null) ignores.split(",").forEach(function(ueb) {
 	delete uebs[ueb];
 });
+
+// ignore done sheets
+var dones=queryParam("done");
+var doneMap={};
+if(dones!==null) dones.split(",").forEach(function(blatt) {
+	blatt=blatt.split(".");
+	var ueb=blatt[0];
+	if(doneMap[ueb]===undefined)doneMap[ueb]=[];
+	doneMap[ueb].push(parseInt(blatt[1]));
+});
+
 var viewall=queryParam("view")==="all";
-function addIgnore(vorles) {
-	if(queryParam("idgaf").split(",").indexOf(vorles)>=0) return;
+function addParam(param, insstr) {
+	if(queryParam(param)!==null&&queryParam(param).split(",").indexOf(insstr)>=0) return;
 	var s=location.search;
-	var inx=s.indexOf("idgaf=");
-	if(inx>=0) s=s.slice(0,inx+6)+vorles+","+s.slice(inx+6); 
-	else if(s.length<=1) s="?idgaf="+vorles;
+	var inx=s.indexOf(param);
+	if(inx>=0) s=s.slice(0,inx+param.length+1)+insstr+","+s.slice(inx+param.length+1); 
+	else if(s.length<=1) s="?"+param+"="+insstr;
+	else s+="&"+param+"="+insstr;
 	location.search=s;
+}
+function ignoreSpan(param,thing,text) {
+	return " <span class=tiny onclick='addParam(\""+param+"\",\""+thing+"\")'>("+text+")</span>";
 }
 var todo;
 var overview;
@@ -91,9 +108,10 @@ function calc() {
 	todo=[];overview="";
 	for(var ueb in uebs) {
 		var u = uebs[ueb];
-		var str="<p><h3>"+ueb+" <span class=tiny onclick='addIgnore(\""+ueb+"\")'>(ignore)</span></h3><ul>";
+		var str="<p><h3>"+ueb+ignoreSpan("idgaf",ueb,"ignore")+"</h3><ul>";
 		var date=moment(u.begin);
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
+			var showed=!doneMap[ueb]||doneMap[ueb].indexOf(i+1)<0;
 			var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
 			var num=fmt(i+1,padding);
 			var url=u.url.replace(/\{\d\}/,num);
@@ -102,7 +120,7 @@ function calc() {
 			var li="<li style='color:"+getcolor(date)+"' class='"+(past?"past":"")+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format(datefmt)+" ("+until.toString()+")";
 			str+=li;
 			if(past===false) {
-				todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
+				if(showed) todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
 				if(!viewall) break;
 			}
 			date.add('days', (typeof u.every==="number")?u.every:u.every[i<u.every.length?i:u.every.length-1]);
@@ -112,9 +130,13 @@ function calc() {
 	}
 	todo.sort(function(a,b){return a.date.diff(b.date)});
 	$("#overview").html(overview);
-	$("#priorities").html("<ol>"+$.map(todo,function(e){return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"}).join("\n")+"</ol>");
+	$("#priorities").html("<ol>"+$.map(todo,function(e){
+		return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"+ignoreSpan("done",e.ueb+"."+parseInt(e.num),"done");
+	}).join("\n")+"</ol>");
 }
 calc();
+
+
 function panicfunct() {
 	if(todo.length==0) return;
 	var untilnext=moment.duration(todo[0].date.diff(moment()));
