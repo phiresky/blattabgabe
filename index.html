@@ -111,7 +111,8 @@ if(dones!==null) dones.split(",").forEach(function(blatt) {
 	doneMap[ueb].push(parseInt(blatt[1]));
 });
 
-var viewall=queryParam("view")==="all";
+var view=queryParam("view")
+var viewall=view==="all";
 function addParam(param, insstr) {
 	if(insstr==-1) {
 		location.search=location.search.replace(RegExp('[?&]'+param+'=[^&]*'),"");
@@ -162,6 +163,7 @@ function calc(viewall) {
 	return todo;
 }
 calc(viewall);
+if(view==="ics")toICS();
 
 $("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
 
