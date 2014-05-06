@@ -63,7 +63,29 @@ function panicstring(until,ueb) {
 	if(h>0) str+=h+" Stunde"+((h!=1)?"n ":" ");
 	str+="und "+until.minutes()+" Minuten bis zur "+ueb+"-Abgabe!";
 	return str;
-
+}
+function toICS() {
+	var out = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//phiresky.de//tools\n",
+		t = calc(true);
+	for (var i=0;i<t.length;i++) {
+		var e = t[i],
+			name = "Abgabe "+e.ueb+" Blatt "+e.num,
+			start = e.date.format("YYYYMMDDTHHmm00"),
+			end = moment(e.date).add('minutes',30).format("YYYYMMDDTHHmm00");
+		out += "BEGIN:VEVENT"+
+		  //"\nLOCATION:" + uebs[e.ueb].loc + 
+		  "\nSUMMARY:" + name.replace(/,/g, "\\,") + 
+		  "\nDTSTART:" + start + 
+		  "\nDTEND:" + end + 
+		  //"\nRRULE:FREQ=WEEKLY +
+		  "\nEND:VEVENT\n";
+	};
+	out += "END:VCALENDAR\n";
+	var a = document.body.appendChild(document.createElement("a"));
+	a.href = URL.createObjectURL(new Blob([out], {type: "text/calendar"}));
+	a.download = "Blattabgaben SS2014.ics";
+	a.click();
+	calc(viewall);
 }
 var uebs={
 	"RO":{begin:"2014-04-28 13:15",every:7,url:"http://ti.ira.uka.de/TI-2/Uebungen/blatt{2}.pdf"},
@@ -108,7 +130,7 @@ function ignoreSpan(param,thing,text) {
 }
 var todo;
 var overview;
-function calc() {
+function calc(viewall) {
 	todo=[];overview="";
 	for(var ueb in uebs) {
 		var u = uebs[ueb];
@@ -137,8 +159,9 @@ function calc() {
 	$("#priorities").html("<ol>"+$.map(todo,function(e){
 		return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"+ignoreSpan("done",e.ueb+"."+parseInt(e.num),"done");
 	}).join("\n")+"</ol>");
+	return todo;
 }
-calc();
+calc(viewall);
 
 $("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
 
