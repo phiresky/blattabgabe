@@ -43,7 +43,7 @@ var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
 function queryParam(name) {
 	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
-	return match && decodeURIComponent(match[1]) || "";
+	return match && decodeURIComponent(match[1]) || null;
 }
 function fmt(integer,len) {
 	if(len===1) return ""+integer;
@@ -72,9 +72,11 @@ var uebs={
 	"HM":{begin:"2014-04-23 13:30",every:7,url:"http://www.math.kit.edu/iana3/lehre/hm2inf2014s/media/blatt_{1}.pdf"},
 	"LA":{begin:"2014-05-08 12:00",every:[14,7,7,7,7,7,7],url:"https://ilias.studium.kit.edu/goto_produktiv_fold_309670.html?dammitilias={2}"}
 };
-queryParam("idgaf").split(",").forEach(function(ueb) {
+var ignores=queryParam("idgaf");
+if(ignores!==null) ignores.split(",").forEach(function(ueb) {
 	delete uebs[ueb];
 });
+var viewall=queryParam("view")==="all";
 function addIgnore(vorles) {
 	if(queryParam("idgaf").split(",").indexOf(vorles)>=0) return;
 	var s=location.search;
@@ -101,7 +103,7 @@ function calc() {
 			str+=li;
 			if(past===false) {
 				todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
-				break;
+				if(!viewall) break;
 			}
 			date.add('days', (typeof u.every==="number")?u.every:u.every[i<u.every.length?i:u.every.length-1]);
 		}
