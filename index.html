@@ -73,10 +73,10 @@ function toICS() {
 			start = e.date.format("YYYYMMDDTHHmm00"),
 			end = moment(e.date).add('minutes',30).format("YYYYMMDDTHHmm00");
 		out += "BEGIN:VEVENT"+
-		  //"\nLOCATION:" + uebs[e.ueb].loc + 
-		  "\nSUMMARY:" + name.replace(/,/g, "\\,") + 
-		  "\nDTSTART:" + start + 
-		  "\nDTEND:" + end + 
+		  //"\nLOCATION:" + uebs[e.ueb].loc +
+		  "\nSUMMARY:" + name.replace(/,/g, "\\,") +
+		  "\nDTSTART:" + start +
+		  "\nDTEND:" + end +
 		  //"\nRRULE:FREQ=WEEKLY +
 		  "\nEND:VEVENT\n";
 	};
@@ -121,7 +121,7 @@ function addParam(param, insstr) {
 	if(queryParam(param)!==null&&queryParam(param).split(",").indexOf(insstr)>=0) return;
 	var s=location.search;
 	var inx=s.indexOf(param);
-	if(inx>=0) s=s.slice(0,inx+param.length+1)+insstr+","+s.slice(inx+param.length+1); 
+	if(inx>=0) s=s.slice(0,inx+param.length+1)+insstr+","+s.slice(inx+param.length+1);
 	else if(s.length<=1) s="?"+param+"="+insstr;
 	else s+="&"+param+"="+insstr;
 	location.search=s;
