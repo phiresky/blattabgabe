@@ -60,8 +60,8 @@ function panicstring(until,ueb) {
 	var d=until.days();
 	var h=until.hours();
 	if(d>0) str+=d+" Tag"+((d!=1)?"e, ":", ");
-	if(h>0) str+=h+" Stunde"+((h!=1)?"n ":" ");
-	str+="und "+until.minutes()+" Minuten bis zur "+ueb+"-Abgabe!";
+	if(h>0) str+=h+" Stunde"+((h!=1)?"n":"")+" und";
+	str+=" "+until.minutes()+" Minuten bis zur "+ueb+"-Abgabe!";
 	return str;
 }
 function toICS() {
@@ -192,6 +192,7 @@ setInterval(panicfunct,1000);
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
   ga('create', 'UA-39197996-3', 'phiresky.github.io');
+  ga('require', 'displayfeatures');
   ga('send', 'pageview');
 
 </script>
