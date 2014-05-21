@@ -169,6 +169,7 @@ $("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
 
 
 function panicfunct() {
+	if(todo.length>0&&todo[0].date.isBefore(moment())) todo.shift();
 	if(todo.length==0) return;
 	var untilnext=moment.duration(todo[0].date.diff(moment()));
 	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
