@@ -53,7 +53,8 @@ if(queryParam('data')!==null) {
 	}).success( function(response) {
 		console.log("loaded gist");
 		for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
-		outstr="Data provided by <a href='"+response.data.owner.url+"'>"+response.data.owner.login+"</a";
+		outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
+		$("footer").prepend(outstr + " | ");
 	}).error( function(e) {
 		throw(e);
 	});
