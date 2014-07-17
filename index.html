@@ -168,6 +168,17 @@ function calc(viewall) {
 	$("#priorities").html("<ol>"+$.map(todo,function(e){
 		return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"+ignoreSpan("done",e.ueb+"."+parseInt(e.num),"done");
 	}).join("\n")+"</ol>");
+	if(todo.length==0) {
+		if(queryParam("celebration")!=="none") {
+			$("#priorities")
+				.text("Keine Übungsblätter mehr!")
+				.animate({fontSize:'200px',opacity:0},3000);
+			setTimeout(function() {
+				$('<iframe style="position:absolute;top:0;left:0;" width="12" height="7" src="https://www.youtube.com/embed/FavUpD_IjVY?list=PL81280E14A07C995D&autoplay=1" frameborder="0" allowfullscreen></iframe>').appendTo("body")
+				.animate({width:"100%",height:"100%"},2000);
+			},2000);
+		}
+	}	
 	return todo;
 }
 calc(viewall);
