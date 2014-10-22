@@ -26,6 +26,7 @@ footer {
 
 <div class="container">
 <h1><span class="title">Übungsblätter</span></h1>
+<div id=alerts></div>
 <h2>Panic</h2>
 <div id=panic></div>
 <h2>Priorities</h2>
@@ -35,30 +36,37 @@ footer {
 <div id=overview>js is disabled</div>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
-<script src="uebs.js"></script>
 <script>
 moment.lang(navigator.language || navigator.userLanguage);
 var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
-$(".title").text(semester.name+" Übungsblätter");
+var semester = {};
 function queryParam(name) {
 	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
 	return match && decodeURIComponent(match[1]) || null;
 }
-if(queryParam('data')!==null) {
-	$.ajax({
-		url: 'https://api.github.com/gists/'+queryParam('data'),
-		type: 'GET',
-		dataType: 'jsonp'
-	}).success( function(response) {
-		console.log("loaded gist");
-		for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
-		outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
-		$("footer").prepend(outstr + " | ");
-	}).error( function(e) {
-		throw(e);
-	});
+function showerr(txt) {
+	$("div#alerts").append("<div class='alert alert-danger' role='alert'>"+txt+"</div>");
 }
+var url = 'https://api.github.com/gists/'+(queryParam('data')||"e3a72147f48cc66cfe2f");
+if(!queryParam('data')) showerr('No data gist provided. Example: '+location.href+'?data=e3a72147f48cc66cfe2f loads <a href="https://gist.github.com/e3a72147f48cc66cfe2f">https://gist.github.com/e3a72147f48cc66cfe2f</a>');
+var errfn =  function(e) {
+	showerr('Loading data from '+url+' failed.');
+	throw(e);
+};
+$.ajax({
+	url:url,
+	type: 'GET',
+	dataType: 'jsonp'
+}).success( function(response) {
+	if(!response.data.owner) {errfn(); return;}
+	console.log("loaded gist");
+	for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
+	outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
+	$("footer").prepend(outstr + " | ");
+	init();
+}).error(errfn);
+
 function fmt(integer,len) {
 	if(len===1) return ""+integer;
 	if(integer<10) return "0"+integer;
@@ -169,7 +177,7 @@ function calc(viewall) {
 		return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"+ignoreSpan("done",e.ueb+"."+parseInt(e.num),"done");
 	}).join("\n")+"</ol>");
 	if(todo.length==0) {
-		if(queryParam("celebration")!=="none") {
+		if(false&&queryParam("celebration")!=="none") {
 			$("#priorities")
 				.text("Keine Übungsblätter mehr!")
 				.animate({fontSize:'200px',opacity:0},3000);
@@ -181,10 +189,6 @@ function calc(viewall) {
 	}	
 	return todo;
 }
-calc(viewall);
-if(view==="ics")toICS();
-
-$("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
 
 
 function panicfunct() {
@@ -193,8 +197,15 @@ function panicfunct() {
 	var untilnext=moment.duration(todo[0].date.diff(moment()));
 	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
 }
-panicfunct();
-setInterval(panicfunct,1000);
+function init() {
+	$(".title").text(semester.name+" Übungsblätter");
+	calc(viewall);
+	if(view==="ics")toICS();
+
+	$("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
+	panicfunct();
+	setInterval(panicfunct,1000);
+}
 /*$(".togglable").click(function() {
 	var o=$(this);
 	if(o.text()[0]==="-") o.text("+ "+o.text().substr(1));
