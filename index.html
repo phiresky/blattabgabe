@@ -49,7 +49,7 @@ function showerr(txt) {
 	$("div#alerts").append("<div class='alert alert-danger' role='alert'>"+txt+"</div>");
 }
 var url = 'https://api.github.com/gists/'+(queryParam('data')||"e3a72147f48cc66cfe2f");
-if(!queryParam('data')) showerr('No data gist provided. Example: '+location.href+'?data=e3a72147f48cc66cfe2f loads <a href="https://gist.github.com/e3a72147f48cc66cfe2f">https://gist.github.com/e3a72147f48cc66cfe2f</a>');
+if(!queryParam('data')) showerr('No data gist provided. Upload your Übungsblatt-data as a JSON to gist.github.com.<br>Example: '+location.href+'?data=e3a72147f48cc66cfe2f loads <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist.</a>');
 var errfn =  function(e) {
 	showerr('Loading data from '+url+' failed.');
 	throw(e);
