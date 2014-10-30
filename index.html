@@ -26,6 +26,7 @@ footer {
 
 <div class="container">
 <h1><span class="title">Übungsblätter</span></h1>
+<span class="tiny" id="sourceinfo"></span>
 <div id=alerts></div>
 <h2>Panic</h2>
 <div id=panic></div>
@@ -40,7 +41,7 @@ footer {
 moment.lang(navigator.language || navigator.userLanguage);
 var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
-var semester = {};
+var semester = {}, doneMap = {};
 function queryParam(name) {
 	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
 	return match && decodeURIComponent(match[1]) || null;
@@ -48,24 +49,10 @@ function queryParam(name) {
 function showerr(txt) {
 	$("div#alerts").append("<div class='alert alert-danger' role='alert'>"+txt+"</div>");
 }
-var url = 'https://api.github.com/gists/'+(queryParam('data')||"e3a72147f48cc66cfe2f");
-if(!queryParam('data')) showerr('No data gist provided. Upload your Übungsblatt-data as a JSON to gist.github.com.<br>Example: '+location.href+'?data=e3a72147f48cc66cfe2f loads <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist.</a>');
-var errfn =  function(e) {
-	showerr('Loading data from '+url+' failed.');
+function errfn(e) {
+	showerr('Loading data from '+url+' failed. '+e);
 	throw(e);
 };
-$.ajax({
-	url:url,
-	type: 'GET',
-	dataType: 'jsonp'
-}).success( function(response) {
-	if(!response.data.owner) {errfn(); return;}
-	console.log("loaded gist");
-	for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
-	outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
-	$("footer>p").first().prepend(outstr + " | ");
-	init();
-}).error(errfn);
 
 function fmt(integer,len) {
 	if(len===1) return ""+integer;
@@ -109,22 +96,6 @@ function toICS() {
 	a.click();
 	calc(viewall);
 }
-
-//ignore some uebs
-var ignores=queryParam("idgaf");
-if(ignores!==null) ignores.split(",").forEach(function(ueb) {
-	delete semester.uebs[ueb];
-});
-
-// ignore done sheets
-var dones=queryParam("done");
-var doneMap={};
-if(dones!==null) dones.split(",").forEach(function(blatt) {
-	blatt=blatt.split(".");
-	var ueb=blatt[0];
-	if(doneMap[ueb]===undefined)doneMap[ueb]=[];
-	doneMap[ueb].push(parseInt(blatt[1]));
-});
 
 var view=queryParam("view")
 var viewall=view==="all";
@@ -190,7 +161,6 @@ function calc(viewall) {
 	return todo;
 }
 
-
 function panicfunct() {
 	if(todo.length>0&&todo[0].date.isBefore(moment())) todo.shift();
 	if(todo.length==0) return;
@@ -198,6 +168,20 @@ function panicfunct() {
 	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
 }
 function init() {
+	//ignore some uebs
+	var ignores=queryParam("idgaf");
+	if(ignores!==null) ignores.split(",").forEach(function(ueb) {
+		delete semester.uebs[ueb];
+	});
+	// ignore done sheets
+	var dones=queryParam("done");
+	if(dones!==null) dones.split(",").forEach(function(blatt) {
+		blatt=blatt.split(".");
+		var ueb=blatt[0];
+		if(doneMap[ueb]===undefined)doneMap[ueb]=[];
+		doneMap[ueb].push(parseInt(blatt[1]));
+	});
+
 	$(".title").text(semester.name+" Übungsblätter");
 	calc(viewall);
 	if(view==="ics")toICS();
@@ -206,6 +190,30 @@ function init() {
 	panicfunct();
 	setInterval(panicfunct,1000);
 }
+
+$(document).ready(function() {
+	var gistid = queryParam('data')||"e3a72147f48cc66cfe2f";
+	if(gistid==="help") {
+		showerr('<p>Upload your Übungsblatt-data as a JSON to <a href="http://gist.github.com">gist.github.com</a>.</p><p>An example for the JSON format can be seen at <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist.</a> Then append ?data=&lt;gistid&gt; to this url.</p><p>Example: '+location.host + location.pathname+'?data=e3a72147f48cc66cfe2f</p>');
+		return;
+	}
+	window.url = 'https://api.github.com/gists/'+gistid;
+	$.ajax({
+		url:url,
+		type: 'GET',
+		dataType: 'jsonp'
+	}).success( function(response) {
+		if(!response.data.owner) {errfn(); return;}
+		console.log("loaded gist");
+		try {
+			for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
+			outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
+			$("footer>p").first().prepend(outstr + " | ");
+			$("#sourceinfo").html("<a href='?data=help'>To load a different data set, click here</a>");
+			init();
+		} catch(e) { errfn(e); }
+	}).error(errfn);
+});
 /*$(".togglable").click(function() {
 	var o=$(this);
 	if(o.text()[0]==="-") o.text("+ "+o.text().substr(1));
