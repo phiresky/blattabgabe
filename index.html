@@ -122,7 +122,8 @@ function calc(viewall) {
 	var semende=moment(semester.end);
 	for(var ueb in semester.uebs) {
 		var u = semester.uebs[ueb];
-		var str="<p><h3>"+ueb+ignoreSpan("idgaf",ueb,"ignore")+"</h3><ul>";
+		var infotxt = $('<div/>').text(u.info||"").html();
+		var str="<p><h3>"+ueb+ignoreSpan("idgaf",ueb,"ignore")+"</h3><p class=info>"+infotxt+"</p><ul>";
 		var date=moment(u.begin);
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
 			var showed=!doneMap[ueb]||doneMap[ueb].indexOf(i+1)<0;
