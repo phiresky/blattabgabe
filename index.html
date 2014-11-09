@@ -42,6 +42,7 @@ moment.lang(navigator.language || navigator.userLanguage);
 var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
 var semester = {}, doneMap = {};
+var defaultData = "d1cc2a5220a2596ebbdc";
 function queryParam(name) {
 	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
 	return match && decodeURIComponent(match[1]) || null;
@@ -193,9 +194,9 @@ function init() {
 }
 
 $(document).ready(function() {
-	var gistid = queryParam('data')||"d1cc2a5220a2596ebbdc";
+	var gistid = queryParam('data')||defaultData;
 	if(gistid==="help") {
-		showerr('<p>Upload your Übungsblatt-data as a JSON to <a href="http://gist.github.com">gist.github.com</a>.</p><p>An example for the JSON format can be seen at <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist.</a> Then append ?data=&lt;gistid&gt; to this url.</p><p>Example: '+location.host + location.pathname+'?data=e3a72147f48cc66cfe2f</p>');
+		showerr('<p>Upload your Übungsblatt-data as a JSON to <a href="http://gist.github.com">gist.github.com</a> or <a href="https://gist.github.com/'+defaultData+'">fork the default data set.</a>.</p><p>An example for the JSON format can be seen at <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist of the original KIT SS 2014 data.</a></p><p>Then append ?data=&lt;gistid&gt; to this url.</p><p>Example: '+location.host + location.pathname+'?data=e3a72147f48cc66cfe2f</p>');
 		return;
 	}
 	window.url = 'https://api.github.com/gists/'+gistid;
