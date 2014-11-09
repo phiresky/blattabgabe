@@ -2,7 +2,7 @@
 <html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title class="title">KIT Inf SS2014 Übungsblätter</title>
+<title class="title">Übungsblätter - Übersicht</title>
 <link rel="stylesheet" href="bs/css/bootstrap.min.css">
 <style>
 .past {
@@ -93,7 +93,7 @@ function toICS() {
 	out += "END:VCALENDAR\n";
 	var a = document.body.appendChild(document.createElement("a"));
 	a.href = URL.createObjectURL(new Blob([out], {type: "text/calendar"}));
-	a.download = "Blattabgaben SS2014.ics";
+	a.download = "Blattabgaben "+semester.name+".ics";
 	a.click();
 	calc(viewall);
 }
