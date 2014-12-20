@@ -31,10 +31,31 @@ footer {
 <h2>Panic</h2>
 <div id=panic></div>
 <h2>Priorities</h2>
-<div id=priorities></div>
+<script type=λ id="priorities">
+<ol>λtodo->(
+	<li style='color:λgetcolor(date)'>λdate.fromNow():
+		<a href='λurl'>λueb Blatt λparseInt(num)</a>
+		(λdate.format(datefmt))λ#ignoreSpan(param:"done",thing:ueb+"."+parseInt(num),text:"done")
+)
+</ol>
+</script>
 <hr>
 <h2 class=togglable>Overview</h2>
-<div id=overview>js is disabled</div>
+<script type=λ id="overview">
+λuebs->(
+<p>
+	<h3>λkeyλ#ignoreSpan(param:"idgaf",thing:key,text:"ignore")</h3>
+	<p class=info>λ(val.info||"")</p>
+	<ul>
+		λdates->(
+		<li style='color:λgetcolor(date)' class='λ(past?"past":"")'>
+			<a href='λurl'>Blatt λnum</a>: λdate.format(datefmt) (λdate.fromNow())
+		</li>
+		)
+	</ul>
+</p>
+)
+</script>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
 <script type="text/tmpln" id=icstmpl>
@@ -49,6 +70,10 @@ DTEND:λmoment(date).add('minutes',30).format("YYYYMMDDTHHmm00")
 END:VEVENT
 )
 END:VCALENDAR
+</script>
+
+<script id="ignoreSpan" type=λ>
+	<span class=tiny onclick='addParam("λparam","λthing")'>(λtext)
 </script>
 <script>
 moment.lang(navigator.language || navigator.userLanguage);
@@ -88,7 +113,7 @@ function panicstring(until,ueb) {
 	return str;
 }
 function toICS() {
-	var out = λ_fill($("#icstmpl").text())({tuts:calc(true)});
+	var out = λ_fill("icstmpl")({tuts:calc(true)});
 	calc(viewall);
 	var a = document.body.appendChild(document.createElement("a"));
 	a.href = URL.createObjectURL(new Blob([out], {type: "text/calendar"}));
@@ -111,42 +136,40 @@ function addParam(param, insstr) {
 	else s+="&"+param+"="+insstr;
 	location.search=s;
 }
-function ignoreSpan(param,thing,text) {
-	return " <span class=tiny onclick='addParam(\""+param+"\",\""+thing+"\")'>("+text+")</span>";
-}
+
 var todo;
 var overview;
 function calc(viewall) {
 	todo=[];overview="";
 	var semende=moment(semester.end);
+	var tmp = {};
 	for(var ueb in semester.uebs) {
 		var u = semester.uebs[ueb];
-		var infotxt = $('<div/>').text(u.info||"").html();
-		var str="<p><h3>"+ueb+ignoreSpan("idgaf",ueb,"ignore")+"</h3><p class=info>"+infotxt+"</p><ul>";
-		var date=moment(u.begin);
+		var date = moment(u.begin);
+		var dates = [];
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
 			var showed=!doneMap[ueb]||doneMap[ueb].indexOf(i+1)<0;
-			var padding=parseInt(u.url.match(/\{(\d)\}/)[1]);
-			var num=fmt(i+1,padding);
-			var url=u.url.replace(/\{\d\}/,num);
-			var past=date.isBefore(moment());
-			var until=date.fromNow();
-			var li="<li style='color:"+getcolor(date)+"' class='"+(past?"past":"")+"'><a href='"+url+"'>Blatt "+num+"</a>: "+date.format(datefmt)+" ("+until.toString()+")";
-			str+=li;
-			if(past===false) {
-				if(showed) todo.push({date:moment(date),past:past,until:until,url:url,num:num,ueb:ueb});
+			var num = fmt(i+1,parseInt(u.url.match(/\{(\d)\}/)[1]));
+			var info = {
+				date:moment(date),
+				url:u.url.replace(/\{\d\}/,num),
+				num:num,
+				ueb:ueb,
+				past:date.isBefore(moment())
+			};
+			dates.push(info);
+			if(!info.past) {
+				if(showed) todo.push(info);
 				if(!viewall&&showed) break;
 			}
-			date.add('days', (typeof u.every==="number")?u.every:u.every[i<u.every.length?i:u.every.length-1]);
+			date.add('days', (typeof u.every==="number") ?
+				u.every : u.every[i<u.every.length?i:u.every.length-1]);
 		}
-		str+="</ul></p>";
-		overview+=str;
+		tmp[ueb] = {info:u.info,dates:dates};
 	}
 	todo.sort(function(a,b){return a.date.diff(b.date)});
-	$("#overview").html(overview);
-	$("#priorities").html("<ol>"+$.map(todo,function(e){
-		return "<li style='color:"+getcolor(e.date)+";'>"+e.until+": <a href='"+e.url+"'>"+e.ueb+" Blatt "+parseInt(e.num)+"</a> ("+e.date.format(datefmt)+")"+ignoreSpan("done",e.ueb+"."+parseInt(e.num),"done");
-	}).join("\n")+"</ol>");
+	λ_fill.inplace("overview",{uebs:tmp});
+	λ_fill.inplace("priorities",window);
 	if(todo.length==0) {
 		if(false&&queryParam("celebration")!=="none") {
 			$("#priorities")
@@ -186,7 +209,7 @@ function init() {
 	calc(viewall);
 	if(view==="ics")toICS();
 
-	$("h1").append(ignoreSpan("view",viewall?-1:"all",viewall?"alle":"aktuelle"));
+	$("h1").append(λ_fill("ignoreSpan")({param:"view",thing:(viewall?-1:"all"),text:viewall?"alle":"aktuelle"}));
 	panicfunct();
 	setInterval(panicfunct,1000);
 }
@@ -226,7 +249,7 @@ $(document).ready(function() {
 	<p><a href="#" onclick="toICS()">export as ICS</a> | Dates are calculated, and may not be accurate if Profs make exceptions.</p>
 	<p>More tools on <a href="http://studium.sexy">studium.sexy</a> | <a href="https://github.com/phiresky/blattabgabe">Source on Github</a></p></footer>
 </div>
-<script src="/lib/λ.js"></script>
+<script src="lib/λ.js"></script>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
