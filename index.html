@@ -37,6 +37,19 @@ footer {
 <div id=overview>js is disabled</div>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
+<script type="text/tmpln" id=icstmpl>
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//phiresky.de//tools
+λtuts->(
+BEGIN:VEVENT
+SUMMARY:Abgabe λueb.replace(/,/g,"\\,") Blatt λval.num
+DTSTART:λdate.format("YYYYMMDDTHHmm00")
+DTEND:λmoment(date).add('minutes',30).format("YYYYMMDDTHHmm00")
+END:VEVENT
+)
+END:VCALENDAR
+</script>
 <script>
 moment.lang(navigator.language || navigator.userLanguage);
 var datefmt="dd, DD.MM. HH:mm";
@@ -75,27 +88,12 @@ function panicstring(until,ueb) {
 	return str;
 }
 function toICS() {
-	var out = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//phiresky.de//tools\n",
-		t = calc(true);
-	for (var i=0;i<t.length;i++) {
-		var e = t[i],
-			name = "Abgabe "+e.ueb+" Blatt "+e.num,
-			start = e.date.format("YYYYMMDDTHHmm00"),
-			end = moment(e.date).add('minutes',30).format("YYYYMMDDTHHmm00");
-		out += "BEGIN:VEVENT"+
-		  //"\nLOCATION:" + uebs[e.ueb].loc +
-		  "\nSUMMARY:" + name.replace(/,/g, "\\,") +
-		  "\nDTSTART:" + start +
-		  "\nDTEND:" + end +
-		  //"\nRRULE:FREQ=WEEKLY +
-		  "\nEND:VEVENT\n";
-	};
-	out += "END:VCALENDAR\n";
+	var out = λ_fill($("#icstmpl").text())({tuts:calc(true)});
+	calc(viewall);
 	var a = document.body.appendChild(document.createElement("a"));
 	a.href = URL.createObjectURL(new Blob([out], {type: "text/calendar"}));
 	a.download = "Blattabgaben "+semester.name+".ics";
 	a.click();
-	calc(viewall);
 }
 
 var view=queryParam("view")
@@ -228,6 +226,7 @@ $(document).ready(function() {
 	<p><a href="#" onclick="toICS()">export as ICS</a> | Dates are calculated, and may not be accurate if Profs make exceptions.</p>
 	<p>More tools on <a href="http://studium.sexy">studium.sexy</a> | <a href="https://github.com/phiresky/blattabgabe">Source on Github</a></p></footer>
 </div>
+<script src="/lib/λ.js"></script>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -237,5 +236,4 @@ $(document).ready(function() {
   ga('create', 'UA-39197996-3', 'phiresky.github.io');
   ga('require', 'displayfeatures');
   ga('send', 'pageview');
-
 </script>
