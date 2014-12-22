@@ -25,26 +25,34 @@ footer {
 </style>
 
 <div class="container">
-<h1><span class="title">Übungsblätter</span></h1>
-<span class="tiny" id="sourceinfo"></span>
-<div id=alerts></div>
+<script type=λ>
+<h1>
+	<span class="title">λsemester.name Übungsblätter</span>
+	λ#addParam(param:"view",val:(viewall?-1:"all"),label:viewall?"alle":"aktuelle")
+</h1>
+<span class="tiny" id="sourceinfo">
+	<a href="?data=help">To load a different data set, click here</a>
+</span>
+λerrors->(
+	<div class="alert alert-danger">λval
+)
+</script><script type=λ id="panic">
 <h2>Panic</h2>
-<div id=panic></div>
+	<h3 id="panic">Nur noch λtimestring(todo[0].until) bis zur λ(todo[0].ueb)-Abgabe!</h3>
+</script><script type=λ>
 <h2>Priorities</h2>
-<script type=λ id="priorities">
 <ol>λtodo->(
 	<li style='color:λgetcolor(date)'>λdate.fromNow():
 		<a href='λurl'>λueb Blatt λparseInt(num)</a>
-		(λdate.format(datefmt))λ#ignoreSpan(param:"done",thing:ueb+"."+parseInt(num),text:"done")
+		(λdate.format(datefmt))
+	</li>
 )
 </ol>
-</script>
 <hr>
 <h2 class=togglable>Overview</h2>
-<script type=λ id="overview">
-λuebs->(
+λparseduebs->(
 <p>
-	<h3>λkeyλ#ignoreSpan(param:"idgaf",thing:key,text:"ignore")</h3>
+	<h3>λkeyλ#addParam(param:"idgaf",val:key,label:"ignore")</h3>
 	<p class=info>λ(val.info||"")</p>
 	<ul>
 		λdates->(
@@ -58,7 +66,7 @@ footer {
 </script>
 <script src="jquery.min.js"></script>
 <script src="moment.min.js"></script>
-<script type="text/tmpln" id=icstmpl>
+<script type="λ_noauto" id=icstmpl>
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//phiresky.de//tools
@@ -72,21 +80,23 @@ END:VEVENT
 END:VCALENDAR
 </script>
 
-<script id="ignoreSpan" type=λ>
-	<span class=tiny onclick='addParam("λparam","λthing")'>(λtext)
+<script id="addParam" type="λ_noauto">
+	<span class=tiny onclick='addParam("λparam","λval")'>(λlabel)
 </script>
 <script>
 moment.lang(navigator.language || navigator.userLanguage);
 var datefmt="dd, DD.MM. HH:mm";
 var maxwarndiff=5*24*3600*1000;
-var semester = {}, doneMap = {};
+var semester = {};
 var defaultData = "d1cc2a5220a2596ebbdc";
+var errors = [];
 function queryParam(name) {
 	var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
 	return match && decodeURIComponent(match[1]) || null;
 }
 function showerr(txt) {
-	$("div#alerts").append("<div class='alert alert-danger' role='alert'>"+txt+"</div>");
+	errors.push(txt);
+	λ_fill.inplace("alerts",window);
 }
 function errfn(e) {
 	showerr('Loading data from '+url+' failed. '+e);
@@ -103,13 +113,13 @@ function getcolor(until) {
 	if(red<0) red=0;
 	return "rgb("+(red*255).toFixed(0)+",0,0)";
 }
-function panicstring(until,ueb) {
-	var str="Nur noch ";
+function timestring(until) {
+	var str = "";
 	var d=until.days();
 	var h=until.hours();
 	if(d>0) str+=d+" Tag"+((d!=1)?"e, ":", ");
 	if(h>0) str+=h+" Stunde"+((h!=1)?"n":"")+" und";
-	str+=" "+until.minutes()+" Minuten bis zur "+ueb+"-Abgabe!";
+	str+=" "+until.minutes()+" Minuten";
 	return str;
 }
 function toICS() {
@@ -139,16 +149,15 @@ function addParam(param, insstr) {
 
 var todo;
 var overview;
+var parseduebs = {};
 function calc(viewall) {
 	todo=[];overview="";
 	var semende=moment(semester.end);
-	var tmp = {};
 	for(var ueb in semester.uebs) {
 		var u = semester.uebs[ueb];
 		var date = moment(u.begin);
 		var dates = [];
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
-			var showed=!doneMap[ueb]||doneMap[ueb].indexOf(i+1)<0;
 			var num = fmt(i+1,parseInt(u.url.match(/\{(\d)\}/)[1]));
 			var info = {
 				date:moment(date),
@@ -159,17 +168,18 @@ function calc(viewall) {
 			};
 			dates.push(info);
 			if(!info.past) {
-				if(showed) todo.push(info);
-				if(!viewall&&showed) break;
+				todo.push(info);
+				if(!viewall) break;
 			}
 			date.add('days', (typeof u.every==="number") ?
 				u.every : u.every[i<u.every.length?i:u.every.length-1]);
 		}
-		tmp[ueb] = {info:u.info,dates:dates};
+		parseduebs[ueb] = {info:u.info,dates:dates};
 	}
 	todo.sort(function(a,b){return a.date.diff(b.date)});
-	λ_fill.inplace("overview",{uebs:tmp});
-	λ_fill.inplace("priorities",window);
+	updatepanic();
+	setInterval(updatepanic,1000);
+	λ_fill.auto();
 	if(todo.length==0) {
 		if(false&&queryParam("celebration")!=="none") {
 			$("#priorities")
@@ -184,11 +194,11 @@ function calc(viewall) {
 	return todo;
 }
 
-function panicfunct() {
+function updatepanic() {
 	if(todo.length>0&&todo[0].date.isBefore(moment())) todo.shift();
 	if(todo.length==0) return;
-	var untilnext=moment.duration(todo[0].date.diff(moment()));
-	$("#panic").html("<h3>"+panicstring(untilnext,todo[0].ueb)+"</h3>");
+	todo[0].until=moment.duration(todo[0].date.diff(moment()));
+	λ_fill.inplace("panic",window);
 }
 function init() {
 	//ignore some uebs
@@ -196,22 +206,8 @@ function init() {
 	if(ignores!==null) ignores.split(",").forEach(function(ueb) {
 		delete semester.uebs[ueb];
 	});
-	// ignore done sheets
-	var dones=queryParam("done");
-	if(dones!==null) dones.split(",").forEach(function(blatt) {
-		blatt=blatt.split(".");
-		var ueb=blatt[0];
-		if(doneMap[ueb]===undefined)doneMap[ueb]=[];
-		doneMap[ueb].push(parseInt(blatt[1]));
-	});
-
-	$(".title").text(semester.name+" Übungsblätter");
-	calc(viewall);
-	if(view==="ics")toICS();
-
-	$("h1").append(λ_fill("ignoreSpan")({param:"view",thing:(viewall?-1:"all"),text:viewall?"alle":"aktuelle"}));
-	panicfunct();
-	setInterval(panicfunct,1000);
+	if(view==="ics") toICS();
+	else calc(viewall);
 }
 
 $(document).ready(function() {
@@ -229,27 +225,25 @@ $(document).ready(function() {
 		if(!response.data.owner) {errfn(); return;}
 		console.log("loaded gist");
 		try {
-			for(fname in response.data.files) { semester = JSON.parse(response.data.files[fname].content);break;}
-			outstr="Data provided by <a href='"+response.data.owner.html_url+"'>"+response.data.owner.login+"</a>";
-			$("footer>p").first().prepend(outstr + " | ");
-			$("#sourceinfo").html("<a href='?data=help'>To load a different data set, click here</a>");
+			semester = JSON.parse(response.data.files[Object.keys(response.data.files)[0]].content);
+			window.datasource = response.data;
 			init();
 		} catch(e) { errfn(e); }
 	}).error(errfn);
 });
-/*$(".togglable").click(function() {
-	var o=$(this);
-	if(o.text()[0]==="-") o.text("+ "+o.text().substr(1));
-
-	else o.text("- "+o.text().substr(1));
-	o.next().slideToggle();
-});*/
 </script>
+<script type="text/tmpl">
 <footer>
-	<p><a href="#" onclick="toICS()">export as ICS</a> | Dates are calculated, and may not be accurate if Profs make exceptions.</p>
-	<p>More tools on <a href="http://studium.sexy">studium.sexy</a> | <a href="https://github.com/phiresky/blattabgabe">Source on Github</a></p></footer>
+	<p>
+		Data provided by <a href="λdatasource.owner.html_url">λdatasource.owner.login</a> |
+		<a href="#" onclick="toICS()">export as ICS</a> |
+		Dates are calculated, and may not be accurate if Profs make exceptions.
+	</p>
+	<p>More tools on <a href="http://studium.sexy">studium.sexy</a> | <a href="https://github.com/phiresky/blattabgabe">Source on Github</a></p>
+</footer>
+</script>
 </div>
-<script src="lib/λ.js"></script>
+<script src="lib/lam_fill/λ.js"></script>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
