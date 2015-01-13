@@ -34,7 +34,7 @@ footer {
 	<a href="?data=help">To load a different data set, click here</a>
 </span>
 λerrors->(
-	<div class="alert alert-danger">λval
+	<div class="alert alert-danger">λval</div>
 )
 </script><script type=λ id="panic">
 <h2>Panic</h2>
@@ -96,7 +96,6 @@ function queryParam(name) {
 }
 function showerr(txt) {
 	errors.push(txt);
-	λ_fill.inplace("alerts",window);
 }
 function errfn(e) {
 	showerr('Loading data from '+url+' failed. '+e);
@@ -214,6 +213,7 @@ $(document).ready(function() {
 	var gistid = queryParam('data')||defaultData;
 	if(gistid==="help") {
 		showerr('<p>Upload your Übungsblatt-data as a JSON to <a href="http://gist.github.com">gist.github.com</a> or <a href="https://gist.github.com/'+defaultData+'">fork the default data set</a>.</p><p>An example for the JSON format can be seen at <a href="https://gist.github.com/e3a72147f48cc66cfe2f">this gist of the original KIT SS 2014 data.</a></p><p>Then append ?data=&lt;gistid&gt; to this url.</p><p>Example: '+location.host + location.pathname+'?data=e3a72147f48cc66cfe2f</p>');
+		λ_fill.auto();
 		return;
 	}
 	window.url = 'https://api.github.com/gists/'+gistid;
