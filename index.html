@@ -157,7 +157,8 @@ function calc(viewall) {
 		var date = moment(u.begin);
 		var dates = [];
 		for(var i = 0; date.isBefore(semende)&&i<100; i++) {
-			var num = fmt(i+1,parseInt(u.url.match(/\{(\d)\}/)[1]));
+			var match = u.url.match(/\{(\d)\}/);
+			var num = match ? fmt(i+1,parseInt(match[1])) : 0;
 			var info = {
 				date:moment(date),
 				url:u.url.replace(/\{\d\}/,num),
