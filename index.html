@@ -4,11 +4,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title class="title">Übungsblätter - Übersicht</title>
 <link rel="stylesheet" href="bs/css/bootstrap.min.css">
+<link rel="stylesheet" href="bs/css/material.min.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/bootstrap.material-design/0.3.0/css/roboto.min.css">
 <style>
-.past {
-	color:gray !important;
-}
-#panic {
+#panicp {
 	color:darkred;
 }
 hr {
@@ -16,6 +15,9 @@ hr {
 }
 footer {
 	color:gray;
+}
+.well > h2:first-child {
+	margin-top:10px;
 }
 .tiny {
 	font-size:12px;
@@ -26,21 +28,25 @@ footer {
 
 <div class="container">
 <script type=λ>
-<h1>
-	<span class="title">λsemester.name Übungsblätter</span>
-	λ#addParam(param:"view",val:(viewall?-1:"all"),label:viewall?"alle":"aktuelle")
-</h1>
-<span class="tiny" id="sourceinfo">
-	<a href="?data=help">To load a different data set, click here</a>
-</span>
+<div class="page-header">
+	<h1>
+		<span class="title">λsemester.name Übungsblätter</span>
+		λ#addParam(param:"view",val:(viewall?-1:"all"),label:viewall?"alle":"aktuelle")
+	</h1>
+	<p class="tiny" id="sourceinfo">
+		<a href="?data=help">To load a different data set, click here</a>
+	</p>
+</div>
 λerrors->(
 	<div class="alert alert-danger">λval</div>
 )
-</script><script type=λ id="panic">
+</script>
+<script type=λ id="panic">
+<div class=well>
 <h2>Panic</h2>
-λtodo.length?(<h3 id="panic">Nur noch λtimestring(todo[0].until) bis zur λ(todo[0].ueb)-Abgabe!</h3>)
-</script><script type=λ>
+<h3 id="panicp">Nur noch \λtimestring(todo[0].until) bis zur \λ(todo[0].ueb)-Abgabe!</h3>
 <h2>Priorities</h2>
+<p>
 <ol>λtodo->(
 	<li style='color:λgetcolor(date)'>λdate.fromNow():
 		<a href='λurl'>λueb Blatt λparseInt(num)</a>
@@ -48,20 +54,25 @@ footer {
 	</li>
 )
 </ol>
+</p>
+</div>
+</script><script type=λ>
 <hr>
 <h2 class=togglable>Overview</h2>
 λparseduebs->(
-<p>
-	<h3>λkeyλ#addParam(param:"idgaf",val:key,label:"ignore")</h3>
-	<p class=info>λ(val.info||"")</p>
-	<ul>
-		λdates->(
-		<li style='color:λgetcolor(date)' class='λ(past?"past":"")'>
-			<a href='λurl'>Blatt λnum</a>: λdate.format(datefmt) (λdate.fromNow())
-		</li>
-		)
-	</ul>
-</p>
+<div class="panel panel-info">
+	<div class="panel-heading">λkeyλ#addParam(param:"idgaf",val:key,label:"ignore")</div>
+	<div class="panel-body">
+		<p class=info>λ(val.info||"")</p>
+		<ul>
+			λdates->(
+			<li λ(past?"class='text-muted'":getcolor(date))>
+				<a href='λurl'>Blatt λnum</a>: λdate.format(datefmt) (λdate.fromNow())
+			</li>
+			)
+		</ul>
+	</div>
+</div>
 )
 </script>
 <script src="jquery.min.js"></script>
@@ -99,7 +110,7 @@ function showerr(txt) {
 }
 function errfn(e) {
 	showerr('Loading data from '+url+' failed. '+e);
-	throw(e);
+	console.error(e);
 };
 
 function fmt(integer,len) {
@@ -108,6 +119,7 @@ function fmt(integer,len) {
 	else return ""+integer;
 }
 function getcolor(until) {
+	if(until.isBefore(moment())) return "inherit";
 	var red=1-until.diff(moment())/maxwarndiff;
 	if(red<0) red=0;
 	return "rgb("+(red*255).toFixed(0)+",0,0)";
@@ -177,9 +189,9 @@ function calc(viewall) {
 		parseduebs[ueb] = {info:u.info,dates:dates};
 	}
 	todo.sort(function(a,b){return a.date.diff(b.date)});
+	λ_fill.auto();
 	updatepanic();
 	setInterval(updatepanic,1000);
-	λ_fill.auto();
 	if(todo.length==0) {
 		if(false&&queryParam("celebration")!=="none") {
 			$("#priorities")
@@ -195,10 +207,14 @@ function calc(viewall) {
 }
 
 function updatepanic() {
-	if(todo.length>0&&todo[0].date.isBefore(moment())) todo.shift();
-	if(todo.length==0) return;
+	if(todo.length>0 && todo[0].date.isBefore(moment())) todo.shift();
+	if(todo.length==0) {
+		$("#panicp").text("");
+		return;
+	}
 	todo[0].until=moment.duration(todo[0].date.diff(moment()));
-	λ_fill.inplace("panic",window);
+	if(todo.length > 0) $("#panicp").text(
+		λ_fill("Nur noch \λtimestring(todo[0].until) bis zur \λ(todo[0].ueb)-Abgabe!", window));
 }
 function init() {
 	//ignore some uebs
@@ -223,13 +239,13 @@ $(document).ready(function() {
 		type: 'GET',
 		dataType: 'jsonp'
 	}).success( function(response) {
-		if(!response.data.owner) {errfn(); return;}
+		if(!response.data.owner) {errfn(); init(); return;}
 		console.log("loaded gist");
 		try {
 			semester = JSON.parse(response.data.files[Object.keys(response.data.files)[0]].content);
 			window.datasource = response.data;
 			init();
-		} catch(e) { errfn(e); }
+		} catch(e) { errfn(e); init();}
 	}).error(errfn);
 });
 </script>
